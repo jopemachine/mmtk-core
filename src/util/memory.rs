@@ -45,7 +45,7 @@ pub unsafe fn dzmmap(start: Address, size: usize) -> Result<()> {
 #[allow(clippy::let_and_return)] // Zeroing is not neceesary for some OS/s
 pub fn dzmmap_noreplace(start: Address, size: usize) -> Result<()> {
     let prot = PROT_READ | PROT_WRITE | PROT_EXEC;
-    let flags = libc::MAP_ANON | libc::MAP_PRIVATE | libc::MAP_FIXED_NOREPLACE;
+    let flags = libc::MAP_ANON | libc::MAP_PRIVATE | libc::MAP_FIXED;
     let ret = mmap_fixed(start, size, prot, flags);
     // We do not need to explicitly zero for Linux (memory is guaranteed to be zeroed)
     #[cfg(not(target_os = "linux"))]
@@ -62,7 +62,7 @@ pub fn dzmmap_noreplace(start: Address, size: usize) -> Result<()> {
 pub fn mmap_noreserve(start: Address, size: usize) -> Result<()> {
     let prot = PROT_NONE;
     let flags =
-        libc::MAP_ANON | libc::MAP_PRIVATE | libc::MAP_FIXED_NOREPLACE | libc::MAP_NORESERVE;
+        libc::MAP_ANON | libc::MAP_PRIVATE | libc::MAP_FIXED | libc::MAP_NORESERVE;
     mmap_fixed(start, size, prot, flags)
 }
 
@@ -121,8 +121,8 @@ pub fn handle_mmap_error<VM: VMBinding>(error: Error, tls: VMThread) -> ! {
 // Be very careful about using this function.
 pub fn panic_if_unmapped(start: Address, size: usize) {
     let prot = PROT_READ | PROT_WRITE;
-    // MAP_FIXED_NOREPLACE returns EEXIST if already mapped
-    let flags = libc::MAP_ANON | libc::MAP_PRIVATE | libc::MAP_FIXED_NOREPLACE;
+    // MAP_FIXED returns EEXIST if already mapped
+    let flags = libc::MAP_ANON | libc::MAP_PRIVATE | libc::MAP_FIXED;
     match mmap_fixed(start, size, prot, flags) {
         Ok(_) => panic!("{} of size {} is not mapped", start, size),
         Err(e) => {
